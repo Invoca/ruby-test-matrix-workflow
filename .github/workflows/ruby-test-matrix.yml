@@ -6,9 +6,11 @@ on:
       pre-test-hook:
         required: false
         default: "echo 'No pre-test hook provided. Skipping.'"
+        type: string
       test-command:
         required: false
         default: "bundle exec rspec"
+        type: string
 
 jobs:
   ruby-versions:
