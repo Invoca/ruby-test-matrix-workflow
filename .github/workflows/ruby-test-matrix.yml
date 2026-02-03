@@ -49,7 +49,6 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-        bundler: 2.2.29
         bundler-cache: true
     - run: ${{ inputs.pre-test-hook }}
     - uses: nick-fields/retry@v3
