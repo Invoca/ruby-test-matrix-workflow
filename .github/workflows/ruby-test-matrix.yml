@@ -56,6 +56,12 @@ jobs:
         max_attempts: 2
         timeout_minutes: 10
         command: ${{ inputs.test-command }}
+    - name: Upload coverage reports to Codecov
+      continue-on-error: true
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage/lcov.info
 
   build_success:
     if: always()
