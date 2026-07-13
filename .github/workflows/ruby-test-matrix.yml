@@ -15,6 +15,10 @@ on:
         required: false
         default: "bundle exec rspec"
         type: string
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+        description: Optional Codecov upload token for coverage reports
 
 jobs:
   gemfile-paths:
@@ -58,6 +62,7 @@ jobs:
         command: ${{ inputs.test-command }}
     - name: Upload coverage reports to Codecov
       continue-on-error: true
+      if: ${{ hashFiles('coverage/lcov.info') != '' }}
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
