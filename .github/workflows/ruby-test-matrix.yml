@@ -88,11 +88,15 @@ jobs:
         max_attempts: 2
         timeout_minutes: 10
         command: ${{ inputs.test-command }}
+    - name: Debug coverage-fail-on-error
+      run: |
+        echo "raw=${{ inputs.coverage-fail-on-error }}"
+        echo "eq_false=${{ inputs.coverage-fail-on-error == false }}"
+        echo "ne_true=${{ inputs.coverage-fail-on-error != true }}"
+        echo "fromjson=${{ fromJSON(inputs.coverage-fail-on-error) }}"
     - name: Upload coverage reports to Codecov
       if: ${{ inputs.coverage-files != '' }}
-      # Avoid `${{ !... }}` (YAML tag) and quoted "false" (GHA treats a
-      # non-empty string as true for continue-on-error). Compare as boolean.
-      continue-on-error: ${{ inputs.coverage-fail-on-error == false }}
+      continue-on-error: ${{ fromJSON(inputs.coverage-fail-on-error) == false }}
       uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
