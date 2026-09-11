@@ -90,7 +90,8 @@ jobs:
         command: ${{ inputs.test-command }}
     - name: Upload coverage reports to Codecov
       if: ${{ inputs.coverage-files != '' }}
-      continue-on-error: ${{ !inputs.coverage-fail-on-error }}
+      # Quote the expression so YAML does not treat `!` as a tag.
+      continue-on-error: "${{ !inputs.coverage-fail-on-error }}"
       uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
