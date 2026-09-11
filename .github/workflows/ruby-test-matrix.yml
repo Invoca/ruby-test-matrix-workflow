@@ -15,10 +15,38 @@ on:
         required: false
         default: "bundle exec rspec"
         type: string
+      coverage-files:
+        description: >-
+          Comma-separated coverage report paths to upload.
+          Set to an empty string to disable the upload step entirely.
+        required: false
+        default: "coverage/lcov.info"
+        type: string
+      coverage-flags:
+        description: >-
+          Comma-separated Codecov flags used to group coverage metrics.
+          Each flag must match ^[\w\.\-]{1,45}$ (no slashes).
+        required: false
+        default: ""
+        type: string
+      coverage-fail-on-error:
+        description: >-
+          Fail the job when the Codecov upload errors.
+          False by default, matching the informational posture used everywhere else.
+        required: false
+        default: false
+        type: boolean
+      coverage-name:
+        description: Label shown for this upload in the Codecov UI. Defaults to the matrix cell.
+        required: false
+        default: ""
+        type: string
     secrets:
       CODECOV_TOKEN:
         required: false
-        description: Optional Codecov upload token for coverage reports
+        description: >-
+          Org-level Codecov upload token. One value works for every repository.
+          Omit on public repositories to fall back to tokenless upload.
 
 jobs:
   gemfile-paths:
@@ -60,13 +88,34 @@ jobs:
         max_attempts: 2
         timeout_minutes: 10
         command: ${{ inputs.test-command }}
+    # Two steps so continue-on-error is a real YAML boolean. An expression
+    # here is unreliable: GitHub treats a quoted "false" as true, and
+    # fromJSON('') blows up when the boolean input is the default.
     - name: Upload coverage reports to Codecov
+      if: ${{ inputs.coverage-files != '' && !inputs.coverage-fail-on-error }}
       continue-on-error: true
-      if: ${{ hashFiles('coverage/lcov.info') != '' }}
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: coverage/lcov.info
+        slug: ${{ github.repository }}
+        files: ${{ inputs.coverage-files }}
+        flags: ${{ inputs.coverage-flags }}
+        name: ${{ inputs.coverage-name || format('ruby-{0}-{1}', matrix.ruby, matrix.gemfile) }}
+        disable_search: true
+        handle_no_reports_found: true
+        fail_ci_if_error: false
+    - name: Upload coverage reports to Codecov
+      if: ${{ inputs.coverage-files != '' && inputs.coverage-fail-on-error }}
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: ${{ github.repository }}
+        files: ${{ inputs.coverage-files }}
+        flags: ${{ inputs.coverage-flags }}
+        name: ${{ inputs.coverage-name || format('ruby-{0}-{1}', matrix.ruby, matrix.gemfile) }}
+        disable_search: true
+        handle_no_reports_found: true
+        fail_ci_if_error: true
 
   build_success:
     if: always()
