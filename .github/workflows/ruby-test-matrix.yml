@@ -88,15 +88,12 @@ jobs:
         max_attempts: 2
         timeout_minutes: 10
         command: ${{ inputs.test-command }}
-    - name: Debug coverage-fail-on-error
-      run: |
-        echo "raw=${{ inputs.coverage-fail-on-error }}"
-        echo "eq_false=${{ inputs.coverage-fail-on-error == false }}"
-        echo "ne_true=${{ inputs.coverage-fail-on-error != true }}"
-        echo "fromjson=${{ fromJSON(inputs.coverage-fail-on-error) }}"
+    # Two steps so continue-on-error is a real YAML boolean. An expression
+    # here is unreliable: GitHub treats a quoted "false" as true, and
+    # fromJSON('') blows up when the boolean input is the default.
     - name: Upload coverage reports to Codecov
-      if: ${{ inputs.coverage-files != '' }}
-      continue-on-error: ${{ fromJSON(inputs.coverage-fail-on-error) == false }}
+      if: ${{ inputs.coverage-files != '' && !inputs.coverage-fail-on-error }}
+      continue-on-error: true
       uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -106,7 +103,19 @@ jobs:
         name: ${{ inputs.coverage-name || format('ruby-{0}-{1}', matrix.ruby, matrix.gemfile) }}
         disable_search: true
         handle_no_reports_found: true
-        fail_ci_if_error: ${{ inputs.coverage-fail-on-error }}
+        fail_ci_if_error: false
+    - name: Upload coverage reports to Codecov
+      if: ${{ inputs.coverage-files != '' && inputs.coverage-fail-on-error }}
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: ${{ github.repository }}
+        files: ${{ inputs.coverage-files }}
+        flags: ${{ inputs.coverage-flags }}
+        name: ${{ inputs.coverage-name || format('ruby-{0}-{1}', matrix.ruby, matrix.gemfile) }}
+        disable_search: true
+        handle_no_reports_found: true
+        fail_ci_if_error: true
 
   build_success:
     if: always()
